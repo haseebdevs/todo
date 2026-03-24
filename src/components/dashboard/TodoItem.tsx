@@ -56,13 +56,13 @@ export default function TodoItem({ todo, onEdit }: Props) {
   };
 
   return (
-    <div className="border-t border-gray-100 p-4 flex items-center justify-between hover:bg-gray-50">
+    <div className="border-t border-border p-4 flex items-center justify-between hover:bg-muted">
       <div className="flex items-center gap-3">
         <button
           aria-label="toggle completed"
           onClick={toggleCompleted}
           disabled={toggling}
-          className="text-gray-600 hover:text-blue-600 transition-colors disabled:opacity-50"
+          className="text-foreground hover:text-primary transition-colors disabled:opacity-50"
         >
           {todo.completed ? (
             <CheckCircle2 className="w-5 h-5 text-green-600" />
@@ -70,7 +70,7 @@ export default function TodoItem({ todo, onEdit }: Props) {
             <Circle className="w-5 h-5" />
           )}
         </button>
-        <span className={`text-gray-800 ${todo.completed ? "line-through text-gray-400" : ""}`}>
+        <span className={`text-foreground ${todo.completed ? "line-through text-muted-foreground" : ""}`}>
           {todo.title}
         </span>
       </div>

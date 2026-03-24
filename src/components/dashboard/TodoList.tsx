@@ -43,16 +43,16 @@ export default function TodoList({ userId }: Props) {
   );
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
       <div className="p-4">{header}</div>
 
       {!hasTodos ? (
-        <div className="p-8 text-center text-gray-500">
+        <div className="p-8 text-center text-muted-foreground">
           <p className="text-lg font-medium">No tasks yet</p>
           <p className="text-sm">Use the form above to add your first task.</p>
         </div>
       ) : (
-        <div className="divide-y divide-gray-100">
+        <div className="divide-y divide-border">
           {todos.map((t) =>
             editing?.id === t.id ? (
               <div key={t.id} className="p-4">

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ReactNode } from "react";
+import { Sidebar } from "@/components/dashboard/dashboard-index";
 
 export const metadata: Metadata = {
   title: "Todo_App",
@@ -11,14 +12,10 @@ export default function DashboardLayout({
 }: Readonly<{
   children: ReactNode;
 }>) {
-  return <>
-    {children}
-
-    <section>There will be a whole new component for the todo list</section>
-
-    <input type="text" placeholder="Add a new todo" />
-    <form action="/api/todos">
-      <button type="submit">Add Todo</button>
-    </form>
-  </>;
+  return (
+    <div className="min-h-screen grid grid-cols-[16rem_1fr] bg-background text-foreground">
+      <Sidebar />
+      <div className="p-6 bg-background">{children}</div>
+    </div>
+  );
 }
