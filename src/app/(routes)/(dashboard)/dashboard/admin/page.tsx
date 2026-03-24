@@ -11,8 +11,22 @@ import {
   updateDoc,
   doc,
   getDoc,
+  deleteDoc,
+  serverTimestamp,
+  deleteField,
 } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type UserRow = { id: string; email: string; role?: string; disabled?: boolean };
 type TodoRow = { id: string; title: string; completed: boolean; userId: string };
@@ -92,6 +106,16 @@ export default function AdminPage() {
     const next = u.role === "admin" ? "user" : "admin";
     await updateDoc(doc(db, "users", u.id), { role: next });
   };
+  const toggleTodo = async (t: TodoRow) => {
+    const nowCompleted = !t.completed;
+    await updateDoc(doc(db, "todos", t.id), {
+      completed: nowCompleted,
+      completedAt: nowCompleted ? serverTimestamp() : deleteField(),
+    });
+  };
+  const deleteTodo = async (t: TodoRow) => {
+    await deleteDoc(doc(db, "todos", t.id));
+  };
 
   if (loading || !user || !roleLoaded) return null;
   if (!allowed) return null;
@@ -112,6 +136,7 @@ export default function AdminPage() {
                 <th className="p-2 text-muted-foreground">Title</th>
                 <th className="p-2 text-muted-foreground">Completed</th>
                 <th className="p-2 text-muted-foreground">User</th>
+                <th className="p-2 text-muted-foreground">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -122,6 +147,32 @@ export default function AdminPage() {
                     <td className="p-2 text-foreground">{t.title}</td>
                     <td className="p-2 text-foreground">{t.completed ? "Yes" : "No"}</td>
                     <td className="p-2 text-foreground">{u?.email ?? t.userId}</td>
+                    <td className="p-2">
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => toggleTodo(t)}>
+                          {t.completed ? "Mark Pending" : "Mark Completed"}
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="destructive">Delete</Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete todo?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the todo.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteTodo(t)}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
