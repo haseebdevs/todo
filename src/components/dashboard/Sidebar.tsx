@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/contexts-index";
 import { Button } from "@/components/ui/button";
 import { logOut } from "@/lib/auth";
 import { db } from "@/lib/firebase";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 
 const nav = [
   { href: "/dashboard", label: "Overview" },
@@ -20,25 +20,34 @@ export default function Sidebar() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const ADMIN_EMAIL =
-    (process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "").toLowerCase();
-  const isAdmin = (user?.email ?? "").toLowerCase() === ADMIN_EMAIL;
+  const ADMIN_EMAIL = (process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "").toLowerCase();
+  const [dbRole, setDbRole] = useState<string | null>(null);
+  const isSuperAdmin = (user?.email ?? "").toLowerCase() === ADMIN_EMAIL;
+  const isAdmin = isSuperAdmin || dbRole === "admin";
 
   useEffect(() => {
     if (!user) return;
-    const role = isAdmin ? "admin" : "user";
+    const userRef = doc(db, "users", user.uid);
+    const unsub = onSnapshot(userRef, (snap) => {
+      setDbRole((snap.data()?.role as string) ?? null);
+    });
+    return () => unsub();
+  }, [user?.uid]);
+
+  useEffect(() => {
+    if (!user) return;
+    // Only upsert identity/timestamps; do not override role from DB.
     setDoc(
       doc(db, "users", user.uid),
       {
         email: user.email ?? "",
-        role,
         disabled: false,
         updatedAt: serverTimestamp(),
         createdAt: serverTimestamp(),
       },
       { merge: true },
     ).catch(() => { });
-  }, [user?.uid, isAdmin]);
+  }, [user?.uid]);
 
   const handleLogout = async () => {
     await logOut();

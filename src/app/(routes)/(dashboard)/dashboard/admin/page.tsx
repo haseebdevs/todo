@@ -10,6 +10,7 @@ import {
   query,
   updateDoc,
   doc,
+  getDoc,
 } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 
@@ -21,9 +22,16 @@ export default function AdminPage() {
   const router = useRouter();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [todos, setTodos] = useState<TodoRow[]>([]);
-  const ADMIN_EMAIL =
-    (process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "").toLowerCase();
-  const allowed = (user?.email ?? "").toLowerCase() === ADMIN_EMAIL;
+  const ADMIN_EMAIL = (process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "").toLowerCase();
+  const [myRole, setMyRole] = useState<string | null>(null);
+  const allowed =
+    (user?.email ?? "").toLowerCase() === ADMIN_EMAIL || myRole === "admin";
+
+  useEffect(() => {
+    if (!user) return;
+    const ref = doc(db, "users", user.uid);
+    getDoc(ref).then((snap) => setMyRole((snap.data()?.role as string) ?? null));
+  }, [user?.uid]);
 
   useEffect(() => {
     if (!loading) {
@@ -71,6 +79,10 @@ export default function AdminPage() {
 
   const toggleDisable = async (u: UserRow) => {
     await updateDoc(doc(db, "users", u.id), { disabled: !u.disabled });
+  };
+  const toggleRole = async (u: UserRow) => {
+    const next = u.role === "admin" ? "user" : "admin";
+    await updateDoc(doc(db, "users", u.id), { role: next });
   };
 
   if (loading || !user || !allowed) return null;
@@ -130,13 +142,18 @@ export default function AdminPage() {
                     {u.disabled ? "Disabled" : "Active"}
                   </td>
                   <td className="p-2">
-                    {u.role !== "admin" ? (
-                      <Button size="sm" onClick={() => toggleDisable(u)}>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => toggleDisable(u)}>
                         {u.disabled ? "Enable" : "Disable"}
                       </Button>
-                    ) : (
-                      <span className="text-muted-foreground">Admin</span>
-                    )}
+                      <Button
+                        size="sm"
+                        onClick={() => toggleRole(u)}
+                        disabled={u.id === user?.uid && (user?.email ?? "").toLowerCase() === ADMIN_EMAIL}
+                      >
+                        {u.role === "admin" ? "Remove Admin" : "Make Admin"}
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
