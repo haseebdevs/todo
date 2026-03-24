@@ -21,7 +21,8 @@ export default function AdminPage() {
   const router = useRouter();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [todos, setTodos] = useState<TodoRow[]>([]);
-  const ADMIN_EMAIL = "haseebcodes.17@gmail.com";
+  const ADMIN_EMAIL =
+    (process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "").toLowerCase();
   const allowed = (user?.email ?? "").toLowerCase() === ADMIN_EMAIL;
 
   useEffect(() => {

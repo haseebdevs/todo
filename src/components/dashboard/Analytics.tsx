@@ -17,7 +17,9 @@ type Props = {
 };
 
 export default function Analytics({ userId }: Props) {
-  const [items, setItems] = useState<Array<{ completed: boolean; createdAt: Date | null }>>([]);
+  const [items, setItems] = useState<
+    Array<{ completed: boolean; createdAt: Date | null; completedAt: Date | null }>
+  >([]);
 
   useEffect(() => {
     const q = query(collection(db, "todos"), where("userId", "==", userId));
@@ -25,12 +27,20 @@ export default function Analytics({ userId }: Props) {
       setItems(
         snap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => {
           const data = d.data();
-          const ts = data.createdAt;
+          const tsCreated = data.createdAt;
+          const tsCompleted = data.completedAt;
           const createdAt =
-            ts && typeof ts.toDate === "function" ? ts.toDate() : null;
+            tsCreated && typeof tsCreated.toDate === "function"
+              ? tsCreated.toDate()
+              : null;
+          const completedAt =
+            tsCompleted && typeof tsCompleted.toDate === "function"
+              ? tsCompleted.toDate()
+              : null;
           return {
             completed: Boolean(data.completed),
             createdAt,
+            completedAt,
           };
         }),
       );
@@ -66,6 +76,26 @@ export default function Analytics({ userId }: Props) {
     return days;
   }, [items]);
 
+  const last7Completed = useMemo(() => {
+    const now = new Date();
+    const days: { label: string; key: string; value: number }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      const label = d.toLocaleDateString(undefined, { day: "2-digit" });
+      days.push({ label, key, value: 0 });
+    }
+    const byKey = new Map(days.map((d) => [d.key, d]));
+    for (const item of items) {
+      if (!item.completedAt) continue;
+      const key = item.completedAt.toISOString().slice(0, 10);
+      const entry = byKey.get(key);
+      if (entry) entry.value += 1;
+    }
+    return days;
+  }, [items]);
+
   return (
     <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -90,6 +120,16 @@ export default function Analytics({ userId }: Props) {
             label: d.label,
             value: d.value,
             color: "#3b82f6",
+          }))}
+        />
+      </div>
+      <div className="mt-6 rounded-xl border border-border bg-card p-4">
+        <div className="mb-3 text-sm text-muted-foreground">Todos Completed (Last 7 Days)</div>
+        <BarChart
+          data={last7Completed.map((d) => ({
+            label: d.label,
+            value: d.value,
+            color: "#10b981",
           }))}
         />
       </div>

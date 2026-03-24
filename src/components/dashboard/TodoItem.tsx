@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { Trash2, Pencil, CheckCircle2, Circle } from "lucide-react";
 import { db } from "@/lib/firebase";
-import { deleteDoc, doc, updateDoc } from "firebase/firestore";
+import {
+  deleteDoc,
+  doc,
+  updateDoc,
+  serverTimestamp,
+  deleteField,
+} from "firebase/firestore";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,8 +53,10 @@ export default function TodoItem({ todo, onEdit }: Props) {
   const toggleCompleted = async () => {
     try {
       setToggling(true);
+      const nowCompleted = !todo.completed;
       await updateDoc(doc(db, "todos", todo.id), {
-        completed: !todo.completed,
+        completed: nowCompleted,
+        completedAt: nowCompleted ? serverTimestamp() : deleteField(),
       });
     } finally {
       setToggling(false);

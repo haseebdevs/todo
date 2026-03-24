@@ -20,7 +20,8 @@ export default function Sidebar() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const ADMIN_EMAIL = "haseebcodes.17@gmail.com";
+  const ADMIN_EMAIL =
+    (process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "").toLowerCase();
   const isAdmin = (user?.email ?? "").toLowerCase() === ADMIN_EMAIL;
 
   useEffect(() => {
