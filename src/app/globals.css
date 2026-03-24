@@ -127,4 +127,8 @@
   html {
     @apply font-sans;
   }
+
+  .container {
+    @apply px-4 sm:px-6 lg:px-8 m-auto;
+  }
 }
