@@ -24,21 +24,29 @@ export default function AdminPage() {
   const [todos, setTodos] = useState<TodoRow[]>([]);
   const ADMIN_EMAIL = (process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "").toLowerCase();
   const [myRole, setMyRole] = useState<string | null>(null);
+  const [roleLoaded, setRoleLoaded] = useState(false);
   const allowed =
     (user?.email ?? "").toLowerCase() === ADMIN_EMAIL || myRole === "admin";
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setRoleLoaded(false);
+      return;
+    }
     const ref = doc(db, "users", user.uid);
-    getDoc(ref).then((snap) => setMyRole((snap.data()?.role as string) ?? null));
-  }, [user?.uid]);
+    const unsub = onSnapshot(ref, (snap) => {
+      setMyRole((snap.data()?.role as string) ?? null);
+      setRoleLoaded(true);
+    });
+    return () => unsub();
+  }, [user?.uid, db]);
 
   useEffect(() => {
-    if (!loading) {
+    if (!loading && roleLoaded) {
       if (!user) router.push("/login");
       else if (!allowed) router.push("/dashboard");
     }
-  }, [user, loading, allowed, router]);
+  }, [user, loading, roleLoaded, allowed, router]);
 
   useEffect(() => {
     const unsubUsers = onSnapshot(query(collection(db, "users")), (snap) => {
@@ -85,7 +93,8 @@ export default function AdminPage() {
     await updateDoc(doc(db, "users", u.id), { role: next });
   };
 
-  if (loading || !user || !allowed) return null;
+  if (loading || !user || !roleLoaded) return null;
+  if (!allowed) return null;
 
   return (
     <div className="space-y-8">
